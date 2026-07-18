@@ -1,0 +1,265 @@
+{
+  "evaluated_at": "2026-07-18T21:40:36+00:00",
+  "gold_set_size": 40,
+  "extraction_method": "local fallback",
+  "extraction_accuracy": 1.0,
+  "extraction_correct": 40,
+  "baseline_dedup": {
+    "precision": 1.0,
+    "recall": 0.3333333333333333,
+    "true_positives": 5,
+    "false_positives": 0,
+    "false_negatives": 10
+  },
+  "hybrid_dedup": {
+    "precision": 1.0,
+    "recall": 0.3333333333333333,
+    "true_positives": 5,
+    "false_positives": 0,
+    "false_negatives": 10
+  },
+  "semantic_active": false,
+  "semantic_recall_delta": null,
+  "extraction_details": [
+    {
+      "subject": "Account portal is offline",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Account portal offline",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Duplicate charge on invoice",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Duplicate charge appears on invoice",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Mobile app crashes on launch",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Mobile app crashes during launch",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Password reset email never arrives",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Password reset email does not arrive",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Exported report is missing rows",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Exported report missing rows",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Cannot sign in after password reset",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "New credentials fail after changing my password",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Billed twice for the same subscription",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "One plan renewal produced two card payments",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Notifications arrive hours late",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Alerts are not delivered in real time",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Search returns unrelated results",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Results do not match the words I searched",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Two factor code expires immediately",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Login verification tokens are unusable on receipt",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Dashboard totals differ from downloaded CSV",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "The report download and dashboard show different counts",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Cannot remove a former team member",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Access remains active for deleted users",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Uploaded images lose quality",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Photos are compressed until they look blurry",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Calendar integration creates duplicate events",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Each synchronized meeting is added two times",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Checkout accepts expired discount codes",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Old promotions remain valid after their end date",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Add dark mode to the dashboard",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Support SAML single sign on",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Invoice PDF needs our tax identifier",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Add keyboard shortcuts for navigation",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Allow custom dashboard date ranges",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Webhook documentation lacks examples",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Refund status is not visible",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Add French language support",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "Audit log cannot be exported",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    },
+    {
+      "subject": "API rate limit headers are missing",
+      "issue_similarity": 100.0,
+      "category_correct": true,
+      "correct": true
+    }
+  ]
+}
