@@ -30,7 +30,9 @@ def _secret(name: str, default: str = "") -> str:
 @dataclass(frozen=True)
 class Settings:
     database_path: Path = Path(_secret("DATABASE_PATH", "feedback_backlog.db"))
-    dataset_path: Path = Path(_secret("DATASET_PATH", "data/sample_tickets.csv"))
+    dataset_path: Path = Path(
+        _secret("DATASET_PATH", "data/aa_dataset-tickets-multi-lang-5-2-50-version.csv")
+    )
     dedup_threshold: float = float(_secret("DEDUP_THRESHOLD", "85"))
     gemini_api_key: str = _secret("GEMINI_API_KEY")
     gemini_model: str = _secret("GEMINI_MODEL", "gemini-2.5-flash")
