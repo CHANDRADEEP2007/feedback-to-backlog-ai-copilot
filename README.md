@@ -1,6 +1,6 @@
 # Feedback-to-Backlog AI Copilot
 
-An MVP that converts multilingual support tickets into a deduplicated, explainably ranked product backlog. It uses the Kaggle Multilingual Customer Support Ticket dataset as a static stand-in for live feedback channels.
+An MVP that converts multilingual support tickets into a deduplicated, explainably ranked product backlog. It uses Tobias Bueck's Kaggle **Customer IT Support - Ticket Dataset** as a static stand-in for live feedback channels.
 
 ## What works
 
@@ -29,11 +29,25 @@ Copy-Item .env.example .env
 streamlit run app.py
 ```
 
-The repository includes a small dataset sample, so it runs immediately. To use the full local dataset, set:
+The repository includes the complete 28,587-ticket CSV and uses it by default:
 
 ```text
-DATASET_PATH=C:\Users\chand\Downloads\aa_dataset-tickets-multi-lang-5-2-50-version.csv
+DATASET_PATH=data/aa_dataset-tickets-multi-lang-5-2-50-version.csv
 ```
+
+The 300-row `data/sample_tickets.csv` extract remains available for faster local smoke tests.
+
+## Dataset source and attribution
+
+- **Dataset:** [Customer IT Support - Ticket Dataset, version 10](https://www.kaggle.com/datasets/tobiasbueck/multilingual-customer-support-tickets/versions/10)
+- **Creator:** Tobias Bueck
+- **License:** [Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
+- **Included full file:** `data/aa_dataset-tickets-multi-lang-5-2-50-version.csv`
+- **Included derivative:** `data/sample_tickets.csv`, an unmodified 300-row subset used for smoke tests
+- **Local file profile:** 28,587 records, 16 columns, 25,996,354 bytes
+- **SHA-256:** `F187C090E59581C2BBF3AA1377C8DB4DD647464ECF2AE51BF8966E42E0ED6BC0`
+
+The dataset is redistributed under its CC BY 4.0 license. Application source code and evaluation labels are separate project artifacts. See [DATASET_SOURCE.md](DATASET_SOURCE.md) for the field inventory and reproducibility notes.
 
 ## Optional integrations
 
@@ -87,4 +101,4 @@ The initial included gold set is intentionally small; its metrics are evidence f
 
 ## Deployment
 
-For Streamlit Community Cloud, select `app.py` as the entrypoint and add integration values in app secrets. The included sample CSV supports a credential-free demo. Use a persistent external database for a production deployment; Community Cloud's local SQLite storage is ephemeral across rebuilds.
+For Streamlit Community Cloud, select `app.py` as the entrypoint and add integration values in app secrets. The committed full CSV supports a credential-free demo; use the sample path if startup time matters. Use a persistent external database for a production deployment because Community Cloud's local SQLite storage is ephemeral across rebuilds.
