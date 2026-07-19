@@ -48,6 +48,7 @@ Every score is explainable, evaluation results are measured, and known limitatio
 | **Explainable re-rank** | Dragging priority changes Confidence by a fixed 5 percentage points per position, logs the reviewer and formula change, and supports one-click reset |
 | **Jira Cloud sync** | Creates new issues or updates already-linked issues through the REST API |
 | **Interactive dashboard** | Priority, category, search, source, trend, and guardrail views in Streamlit |
+| **Architecture toggle** | Overview switches between the built MVP flow and a clearly labeled target-state roadmap |
 | **Connections preview** | A minor sidebar panel lists planned sources as disabled “Coming soon” controls; no connector is presented as functional before it exists |
 | **Guardrails** | Malformed AI output is retried once, then logged and skipped safely |
 | **Measured quality** | A labeled 40-ticket evaluation harness reports actual extraction and dedup metrics |

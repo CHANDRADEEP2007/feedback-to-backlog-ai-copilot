@@ -12,3 +12,7 @@ def test_streamlit_app_renders_without_exception() -> None:
     app.run()
 
     assert not app.exception
+    architecture_control = next(
+        control for control in app.radio if control.label == "Architecture view"
+    )
+    assert architecture_control.value == "Current state"

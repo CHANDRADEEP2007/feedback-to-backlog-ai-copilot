@@ -7,6 +7,7 @@ import plotly.express as px
 import streamlit as st
 from streamlit_sortables import sort_items
 
+from src.architecture import ARCHITECTURE_VIEWS, render_architecture
 from src.config import Settings
 from src.database import BacklogDatabase
 from src.evaluation import load_results, run_evaluation, save_results
@@ -32,6 +33,35 @@ st.markdown(
     .hero p {margin:0; color:#c7d2fe;}
     .badge {display:inline-block;padding:4px 10px;border-radius:99px;background:#dcfce7;color:#166534;font-size:12px;font-weight:700;}
     div[data-testid="stExpander"] {background:white;border-radius:12px;}
+    .architecture-visual {background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:18px;margin:8px 0 24px;}
+    .arch-summary {display:flex;align-items:center;gap:10px;color:#475569;font-size:14px;margin-bottom:16px;}
+    .arch-view-label {background:#e0e7ff;color:#3730a3;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap;}
+    .arch-flow {display:grid;grid-template-columns:minmax(0,1fr) 30px minmax(0,1.25fr) 30px minmax(0,1fr) 30px minmax(0,1fr);align-items:stretch;gap:6px;}
+    .arch-stage {background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px;min-width:0;}
+    .arch-stage-number {color:#6366f1;font-size:11px;font-weight:800;letter-spacing:.12em;}
+    .arch-stage-title {color:#0f172a;font-size:14px;font-weight:800;margin:3px 0 10px;}
+    .arch-node-list {display:flex;flex-direction:column;gap:8px;}
+    .arch-node {border-radius:10px;padding:10px;background:#fff;}
+    .arch-built {border:1px solid #86efac;box-shadow:inset 3px 0 0 #22c55e;}
+    .arch-planned {border:1px dashed #a5b4fc;background:#f5f3ff;}
+    .arch-node-heading {display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+    .arch-node-name {color:#172033;font-size:12px;font-weight:700;line-height:1.3;}
+    .arch-node-detail {color:#64748b;font-size:11px;line-height:1.35;margin-top:4px;}
+    .arch-status {border-radius:999px;padding:2px 6px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
+    .arch-built .arch-status {background:#dcfce7;color:#166534;}
+    .arch-planned .arch-status {background:#ede9fe;color:#5b21b6;}
+    .arch-arrow {display:flex;align-items:center;justify-content:center;color:#6366f1;font-size:24px;font-weight:800;}
+    .arch-legend {display:flex;gap:18px;flex-wrap:wrap;color:#64748b;font-size:11px;margin-top:14px;}
+    .arch-legend span {display:flex;align-items:center;gap:6px;}
+    .arch-dot {display:inline-block;width:9px;height:9px;border-radius:50%;}
+    .arch-dot-built {background:#22c55e;}
+    .arch-dot-planned {background:#8b5cf6;}
+    @media (max-width: 1000px) {
+      .arch-flow {grid-template-columns:1fr;}
+      .arch-arrow {height:20px;}
+      .arch-arrow span {transform:rotate(90deg);}
+      .arch-summary {align-items:flex-start;flex-direction:column;}
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -100,6 +130,16 @@ with overview_tab:
     columns[2].metric("Signals merged", f"{duplicate_signals:,}")
     columns[3].metric("Merge rate", f"{duplicate_rate:.1%}")
     columns[4].metric("Guardrail errors", f"{len(errors):,}")
+
+    st.subheader("System architecture")
+    architecture_view = st.radio(
+        "Architecture view",
+        ARCHITECTURE_VIEWS,
+        index=0,
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+    st.markdown(render_architecture(architecture_view), unsafe_allow_html=True)
 
     if backlog.empty:
         st.info("No backlog yet. Open **Process feedback** and run a batch to create the first prioritized items.")
