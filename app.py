@@ -5,13 +5,14 @@ from pathlib import Path
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from streamlit_sortables import sort_items
 
 from src.config import Settings
 from src.database import BacklogDatabase
 from src.evaluation import load_results, run_evaluation, save_results
 from src.jira_client import JiraClient, sync_reviewed_items
 from src.pipeline import process_batch
-from src.scoring import RiceScore
+from src.scoring import RiceScore, confidence_after_move
 
 
 st.set_page_config(page_title="SignalStack · Feedback Copilot", page_icon="◈", layout="wide")
@@ -56,6 +57,16 @@ st.sidebar.markdown(f"{'🟢' if settings.gemini_enabled else '⚪'} Gemini extr
 st.sidebar.markdown(f"{'🟢' if settings.jira_enabled else '⚪'} Jira sync")
 st.sidebar.markdown(f"{'🟢' if settings.semantic_dedup_active else '⚪'} Semantic dedup")
 st.sidebar.caption("Missing credentials activate safe demo mode.")
+with st.sidebar.popover("Connections · Coming soon", width="stretch"):
+    st.caption("Roadmap previews only. No source is enabled without a real integration.")
+    for connector in ("Outlook", "Teams", "Zoom", "Slack", "Intercom", "Zendesk"):
+        st.button(
+            connector,
+            key=f"connection_{connector.lower()}",
+            disabled=True,
+            help="Coming soon",
+            width="stretch",
+        )
 st.sidebar.markdown("---")
 st.sidebar.metric("Dedup threshold", f"{settings.dedup_threshold:.0f}%")
 
@@ -123,8 +134,11 @@ with overview_tab:
             st.plotly_chart(chart, width="stretch")
 
         st.subheader("Priority queue")
-        display = backlog[["issue", "category", "rice_score", "occurrence_count", "status", "jira_url"]].copy()
-        display.columns = ["Issue", "Category", "RICE", "Signals", "Status", "Jira"]
+        display = backlog[["issue", "category", "rice_score", "occurrence_count", "manually_adjusted", "status", "jira_url"]].copy()
+        display["manually_adjusted"] = display["manually_adjusted"].map(
+            {1: "🟠 Manually adjusted", 0: "AI baseline"}
+        )
+        display.columns = ["Issue", "Category", "RICE", "Signals", "Priority source", "Status", "Jira"]
         st.dataframe(display.head(20), width="stretch", hide_index=True)
 
         history = frame(db.score_history_rows())
@@ -203,10 +217,15 @@ with backlog_tab:
             filtered = filtered[filtered["category"].isin(selected_categories)]
         if selected_statuses:
             filtered = filtered[filtered["status"].isin(selected_statuses)]
-        review_display = filtered[["id", "issue", "category", "rice_score", "occurrence_count", "status", "jira_url"]].rename(
+        filtered = filtered.copy()
+        filtered["priority_source"] = filtered["manually_adjusted"].map(
+            {1: "🟠 Manually adjusted", 0: "AI baseline"}
+        )
+        review_display = filtered[["id", "issue", "category", "rice_score", "occurrence_count", "priority_source", "status", "jira_url"]].rename(
             columns={
                 "id": "ID", "issue": "Issue", "category": "Category", "rice_score": "RICE",
-                "occurrence_count": "Signals", "status": "Status", "jira_url": "Jira",
+                "occurrence_count": "Signals", "priority_source": "Priority source",
+                "status": "Status", "jira_url": "Jira",
             }
         )
         st.dataframe(
@@ -216,8 +235,101 @@ with backlog_tab:
             column_config={"Jira": st.column_config.LinkColumn("Jira")},
         )
 
+        st.markdown("#### Explainable manual re-rank")
+        st.caption(
+            "Drag an item, then apply the preview. Each position moved changes Confidence by "
+            "5 percentage points (bounded from 0% to 100%); Reach, Impact, and Effort never move."
+        )
+        reviewer_name = st.text_input(
+            "Reviewer name",
+            value=st.session_state.get("reviewer_name", "Product manager"),
+            key="reviewer_name",
+            help="Stored with every manual score adjustment.",
+        )
+        ordered_backlog = backlog.sort_values(["rice_score", "id"], ascending=[False, True])
+        rank_labels = []
+        label_to_id = {}
+        for row in ordered_backlog.itertuples():
+            badge = " · MANUALLY ADJUSTED" if int(row.manually_adjusted) else ""
+            label = f"#{int(row.id)} · {row.issue} · RICE {float(row.rice_score):.2f}{badge}"
+            rank_labels.append(label)
+            label_to_id[label] = int(row.id)
+        reranked_labels = sort_items(
+            rank_labels,
+            custom_style="""
+                .sortable-component {padding: 0.25rem;}
+                .sortable-item {
+                    background: #ffffff;
+                    border: 1px solid #dbe3ef;
+                    border-radius: 10px;
+                    color: #182230;
+                    margin: 0.35rem 0;
+                    padding: 0.7rem;
+                }
+            """,
+        )
+        requested_ids = [label_to_id[label] for label in reranked_labels]
+        current_ids = ordered_backlog["id"].astype(int).tolist()
+        rank_changed = requested_ids != current_ids
+        preview_rows = []
+        rerank_message = st.session_state.pop("rerank_message", None)
+        if rerank_message:
+            st.success(rerank_message)
+        if rank_changed:
+            positions = {item_id: position for position, item_id in enumerate(current_ids)}
+            backlog_by_id = {int(row.id): row for row in backlog.itertuples()}
+            projected_scores = {}
+            for new_position, item_id in enumerate(requested_ids):
+                row = backlog_by_id[item_id]
+                confidence = confidence_after_move(
+                    float(row.confidence), positions[item_id], new_position
+                )
+                rice = RiceScore(
+                    float(row.reach), float(row.impact), confidence, float(row.effort)
+                )
+                projected_scores[item_id] = rice.score
+                preview_rows.append(
+                    {
+                        "Requested rank": new_position + 1,
+                        "Issue": row.issue,
+                        "Confidence": f"{confidence:.0%}",
+                        "RICE": f"{rice.score:.2f}",
+                        "Explanation": rice.explanation,
+                    }
+                )
+            score_order = sorted(
+                requested_ids,
+                key=lambda item_id: (-projected_scores[item_id], item_id),
+            )
+            representable = score_order == requested_ids
+            st.dataframe(preview_rows, width="stretch", hide_index=True)
+            if not representable:
+                st.warning(
+                    "This drag cannot be represented by the fixed Confidence adjustment. "
+                    "Nothing will be saved because the displayed rank must always match RICE."
+                )
+            if st.button(
+                "Apply formula-backed order",
+                type="primary",
+                disabled=not representable,
+                width="stretch",
+            ):
+                result = db.apply_manual_reorder(requested_ids, reviewer_name)
+                st.session_state["rerank_message"] = (
+                    f"Updated {result['changed']} item(s) with a traceable Confidence change."
+                )
+                st.rerun()
+        else:
+            st.caption("Drag an item to preview the exact Confidence and RICE changes.")
+
         st.subheader("Review and adjust")
-        labels = {int(row.id): f"#{int(row.id)} · {row.issue}" for row in backlog.itertuples()}
+        labels = {
+            int(row.id): (
+                f"#{int(row.id)} · {row.issue}"
+                + (" · MANUALLY ADJUSTED" if int(row.manually_adjusted) else "")
+            )
+            for row in backlog.itertuples()
+        }
         selected_id = st.selectbox("Backlog item", labels, format_func=labels.get)
         item = backlog[backlog["id"] == selected_id].iloc[0]
         sources_for_item = frame(db.source_rows(int(selected_id)))
@@ -231,9 +343,34 @@ with backlog_tab:
             st.info(f"New score: **{preview_score.score:.2f}** · {preview_score.explanation}")
             save = st.form_submit_button("Save reviewed score", type="primary")
             if save:
-                db.update_score(int(selected_id), preview_score)
+                db.update_score(int(selected_id), preview_score, reviewer_name)
                 st.success("Score updated with a traceable formula.")
                 st.rerun()
+
+        if int(item["manually_adjusted"]):
+            st.warning("🟠 Manually adjusted from the deterministic AI baseline.")
+            if st.button("Reset to AI score", width="stretch"):
+                db.reset_to_ai_score(int(selected_id), reviewer_name)
+                st.success("Original deterministic RICE inputs restored.")
+                st.rerun()
+
+        adjustment_history = frame(db.priority_adjustment_rows(int(selected_id)))
+        with st.expander(f"Adjustment audit trail ({len(adjustment_history)})"):
+            if adjustment_history.empty:
+                st.caption("No manual priority adjustments recorded for this item.")
+            else:
+                audit_display = adjustment_history[
+                    [
+                        "actor", "action", "from_position", "to_position",
+                        "old_confidence", "new_confidence", "old_rice_score",
+                        "new_rice_score", "created_at",
+                    ]
+                ].copy()
+                audit_display.columns = [
+                    "Who", "Action", "From rank", "To rank", "Old confidence",
+                    "New confidence", "Old RICE", "New RICE", "When",
+                ]
+                st.dataframe(audit_display, width="stretch", hide_index=True)
 
         sync_col, status_col = st.columns((1, 2))
         with sync_col:
@@ -350,6 +487,7 @@ with quality_tab:
         "- Gemini must return valid structured output; failures are logged and skipped.\n"
         "- Duplicate matching uses RapidFuzz first and optional Gemini embeddings second.\n"
         "- RICE is deterministic: `(Reach × Impact × Confidence) ÷ Effort`.\n"
+        "- Manual re-ranks change Confidence only and are rejected unless recalculated RICE matches the requested order.\n"
         "- Jira sync is disabled until all credentials are configured.\n"
         "- Every backlog item retains its original source feedback."
     )

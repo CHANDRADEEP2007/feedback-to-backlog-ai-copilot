@@ -40,12 +40,16 @@ def process_row(
 
     if match:
         existing = next(item for item in backlog if int(item["id"]) == match.backlog_id)
-        reach = max(float(existing["reach"]) + 1.0, base.reach)
+        baseline_reach = float(existing.get("ai_reach") or existing["reach"])
+        baseline_impact = float(existing.get("ai_impact") or existing["impact"])
+        baseline_confidence = float(existing.get("ai_confidence") or existing["confidence"])
+        baseline_effort = float(existing.get("ai_effort") or existing["effort"])
+        reach = max(baseline_reach + 1.0, base.reach)
         rice = RiceScore(
             reach=reach,
-            impact=max(float(existing["impact"]), base.impact),
-            confidence=max(float(existing["confidence"]), base.confidence),
-            effort=float(existing["effort"]),
+            impact=max(baseline_impact, base.impact),
+            confidence=max(baseline_confidence, base.confidence),
+            effort=baseline_effort,
         )
         db.add_duplicate_source(match.backlog_id, row, rice, match, batch_id)
         return "duplicate"

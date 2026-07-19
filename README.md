@@ -45,8 +45,10 @@ Every score is explainable, evaluation results are measured, and known limitatio
 | **Full provenance** | SQLite links every backlog item to its source feedback |
 | **Transparent scoring** | Fixed and fully traceable RICE formula |
 | **Human review** | Product managers can adjust RICE inputs before Jira sync |
+| **Explainable re-rank** | Dragging priority changes Confidence by a fixed 5 percentage points per position, logs the reviewer and formula change, and supports one-click reset |
 | **Jira Cloud sync** | Creates new issues or updates already-linked issues through the REST API |
 | **Interactive dashboard** | Priority, category, search, source, trend, and guardrail views in Streamlit |
+| **Connections preview** | A minor sidebar panel lists planned sources as disabled “Coming soon” controls; no connector is presented as functional before it exists |
 | **Guardrails** | Malformed AI output is retried once, then logged and skipped safely |
 | **Measured quality** | A labeled 40-ticket evaluation harness reports actual extraction and dedup metrics |
 | **Priority trends** | Score history shows how rankings change as feedback accumulates |
@@ -131,6 +133,8 @@ RICE = ────────────────────────�
 
 Initial inputs are derived deterministically from ticket priority and type. Repeated feedback increases Reach and re-scores the item. Reviewers can edit every component before Jira sync, and the stored explanation retains the exact calculation.
 
+Manual drag-to-reorder never creates a separate hidden priority. Moving an item up one position adds `0.05` to Confidence; moving it down subtracts `0.05`, bounded to `0.0–1.0`. The app previews the recalculated score and accepts the order only when the resulting RICE scores produce that exact ranking. Each accepted adjustment records the reviewer, timestamp, positions, Confidence change, and score change. **Reset to AI score** restores the deterministic baseline in one click.
+
 ---
 
 ## 🎯 Evaluation
@@ -210,6 +214,7 @@ The full CSV is redistributed unchanged under CC BY 4.0. The smaller file is ide
 - RapidFuzz misses sufficiently different paraphrases when semantic matching is disabled.
 - Semantic matching incurs Gemini API usage and requires credentials.
 - Initial RICE inputs are heuristics until reviewed by a product manager.
+- Some drag arrangements cannot be represented by the fixed Confidence rule; the app rejects them without changing any score instead of storing a rank that conflicts with RICE.
 - Jira projects with custom required fields may need additional field mapping.
 - Local SQLite storage is suitable for the demo but is ephemeral on Streamlit Community Cloud rebuilds.
 

@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+RERANK_CONFIDENCE_STEP = 0.05
+
+
 @dataclass(frozen=True)
 class RiceScore:
     reach: float
@@ -31,6 +34,19 @@ class RiceScore:
             f"{self.confidence:.0%} confidence) ÷ {self.effort:g} effort = "
             f"{self.score:.2f}"
         )
+
+
+def confidence_after_move(
+    confidence: float,
+    from_position: int,
+    to_position: int,
+    step: float = RERANK_CONFIDENCE_STEP,
+) -> float:
+    """Translate a rank move into the documented, bounded confidence change."""
+    if step <= 0:
+        raise ValueError("Confidence step must be greater than zero")
+    positions_moved_up = from_position - to_position
+    return round(min(1.0, max(0.0, confidence + positions_moved_up * step)), 4)
 
 
 def initial_rice(priority: str, ticket_type: str, extraction_method: str) -> RiceScore:
