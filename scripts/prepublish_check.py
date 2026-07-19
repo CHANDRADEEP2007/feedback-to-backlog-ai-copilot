@@ -30,6 +30,10 @@ def repository_files() -> list[Path]:
 def main() -> int:
     failures: list[str] = []
     for path in repository_files():
+        # ``git ls-files`` can include a tracked file that has been deleted in
+        # the working tree but not staged yet. There is nothing left to scan.
+        if not path.is_file():
+            continue
         relative = path.relative_to(ROOT)
         if path.name in FORBIDDEN_NAMES or path.suffix.lower() in FORBIDDEN_SUFFIXES:
             failures.append(f"Forbidden publish file: {relative}")

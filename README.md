@@ -9,6 +9,7 @@
 ![Gemini](https://img.shields.io/badge/Gemini_API-4285F4?style=for-the-badge&logo=google&logoColor=white)
 ![Jira](https://img.shields.io/badge/Jira_Cloud-0052CC?style=for-the-badge&logo=jira&logoColor=white)
 ![Phase](https://img.shields.io/badge/status-MVP_Phase_2-9146FF?style=for-the-badge)
+[![CI](https://github.com/CHANDRADEEP2007/feedback-to-backlog-ai-copilot/actions/workflows/ci.yml/badge.svg)](https://github.com/CHANDRADEEP2007/feedback-to-backlog-ai-copilot/actions/workflows/ci.yml)
 
 [Project page](https://chandradeep2007.github.io/feedback-to-backlog-ai-copilot/) · [Dataset source](https://www.kaggle.com/datasets/tobiasbueck/multilingual-customer-support-tickets/versions/10)
 
