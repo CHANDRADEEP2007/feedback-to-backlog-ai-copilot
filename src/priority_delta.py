@@ -13,6 +13,62 @@ PRIORITY_DELTA_COLUMNS = [
     "direction",
 ]
 
+CURRENT_PRIORITY_COLUMNS = [
+    "backlog_id",
+    "issue",
+    "current_score",
+    "reach",
+    "impact",
+    "confidence",
+    "effort",
+    "status",
+]
+
+
+def priority_insight_mode(
+    priority_delta: pd.DataFrame,
+    minimum_delta_items: int = 2,
+) -> str:
+    """Choose the comparative delta view only when it has enough context."""
+    return "delta" if len(priority_delta) >= minimum_delta_items else "current"
+
+
+def build_current_priority_frame(
+    backlog: pd.DataFrame,
+    limit: int = 5,
+) -> pd.DataFrame:
+    """Return the highest-scoring current backlog items for the fallback view."""
+    required = {
+        "id",
+        "issue",
+        "rice_score",
+        "reach",
+        "impact",
+        "confidence",
+        "effort",
+        "status",
+    }
+    if backlog.empty or not required.issubset(backlog.columns) or limit < 1:
+        return pd.DataFrame(columns=CURRENT_PRIORITY_COLUMNS)
+
+    current = backlog[list(required)].copy().rename(
+        columns={"id": "backlog_id", "rice_score": "current_score"}
+    )
+    score_columns = [
+        "current_score",
+        "reach",
+        "impact",
+        "confidence",
+        "effort",
+    ]
+    for column in score_columns:
+        current[column] = pd.to_numeric(current[column], errors="coerce")
+    current = current.dropna(subset=["backlog_id", "issue", "current_score"])
+    current = current.sort_values(
+        ["current_score", "issue"], ascending=[False, True]
+    ).head(limit)
+    return current[CURRENT_PRIORITY_COLUMNS].reset_index(drop=True)
+
 
 def build_priority_delta_frame(
     backlog: pd.DataFrame,

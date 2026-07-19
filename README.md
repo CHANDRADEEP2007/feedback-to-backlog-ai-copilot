@@ -52,7 +52,7 @@ Every score is explainable, evaluation results are measured, and known limitatio
 | **Connections preview** | A minor sidebar panel lists planned sources as disabled “Coming soon” controls; no connector is presented as functional before it exists |
 | **Guardrails** | Malformed AI output is retried once, then logged and skipped safely |
 | **Measured quality** | A labeled 40-ticket evaluation harness reports actual extraction and dedup metrics |
-| **Priority change deltas** | A signed bar chart and audit table compare each reviewed item's latest RICE score with its previous snapshot |
+| **Adaptive priority insight** | Shows score-change deltas when history is sufficient, otherwise explains the current top five with full RICE inputs |
 | **Bulk Jira sync** | Syncs reviewed items independently so one failure does not stop the batch |
 | **Explainable merges** | Each duplicate source stores its matching method and similarity score |
 

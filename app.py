@@ -13,7 +13,11 @@ from src.database import BacklogDatabase
 from src.evaluation import load_results, run_evaluation, save_results
 from src.jira_client import JiraClient, sync_reviewed_items
 from src.pipeline import process_batch
-from src.priority_delta import build_priority_delta_frame
+from src.priority_delta import (
+    build_current_priority_frame,
+    build_priority_delta_frame,
+    priority_insight_mode,
+)
 from src.scoring import RiceScore, confidence_after_move
 
 
@@ -184,18 +188,29 @@ with overview_tab:
         display.columns = ["Issue", "Category", "RICE", "Signals", "Priority source", "Status", "Jira"]
         st.dataframe(display.head(20), width="stretch", hide_index=True)
 
-        st.subheader("What changed in prioritization")
-        st.caption(
-            "Compares each reviewed item's latest RICE score against its previous score snapshot."
-        )
         history = frame(db.score_history_rows())
         priority_delta = build_priority_delta_frame(backlog, history)
-        if priority_delta.empty:
-            st.info(
-                "No score changes yet. This chart appears after duplicate merges or manual "
-                "review create a second score snapshot."
+        if priority_insight_mode(priority_delta) == "delta":
+            st.subheader("What changed in prioritization")
+            st.caption(
+                "Compares each reviewed item's latest RICE score against its previous score snapshot."
             )
-        else:
+            moved_items = priority_delta[priority_delta["delta"].abs() > 1e-9]
+            if moved_items.empty:
+                insight_summary = (
+                    "The displayed reviewed items were rescored with no net RICE movement."
+                )
+            else:
+                largest_movement = moved_items.iloc[0]
+                movement_word = "increased" if largest_movement["delta"] > 0 else "decreased"
+                insight_summary = (
+                    f"{len(moved_items)} of {len(priority_delta)} displayed reviewed items changed "
+                    f"score; the largest {movement_word} by "
+                    f"{abs(float(largest_movement['delta'])):.2f} points; latest reason: "
+                    f"{largest_movement['reason']}."
+                )
+            st.markdown(f"**Insight:** {insight_summary}")
+
             delta_chart_data = priority_delta.copy()
             delta_chart_data["axis_issue"] = delta_chart_data["issue"].map(
                 lambda issue: issue if len(issue) <= 58 else f"{issue[:57]}…"
@@ -284,6 +299,120 @@ with overview_tab:
             st.dataframe(delta_table, width="stretch", hide_index=True)
             st.caption(
                 "Latest score changes are shown only for items with at least one earlier score snapshot."
+            )
+        else:
+            st.subheader("Current top priorities")
+            if len(priority_delta) == 1:
+                st.caption(
+                    "Score-change history is still sparse, so this view shows the "
+                    "highest-priority backlog items based on latest scoring."
+                )
+                insight_summary = (
+                    "One reviewed item has comparable score snapshots so far; the current "
+                    "ranking remains the more useful portfolio view."
+                )
+            else:
+                st.caption(
+                    "No score changes yet, so this view shows the highest-priority backlog "
+                    "items based on latest scoring."
+                )
+                insight_summary = (
+                    "No rescored items yet; current ranking reflects the latest backlog signals "
+                    "and formula-backed RICE inputs."
+                )
+            st.markdown(f"**Insight:** {insight_summary}")
+
+            current_priorities = build_current_priority_frame(backlog)
+            current_chart_data = current_priorities.copy()
+            current_chart_data["axis_issue"] = current_chart_data["issue"].map(
+                lambda issue: issue if len(issue) <= 58 else f"{issue[:57]}…"
+            )
+            duplicate_labels = current_chart_data["axis_issue"].duplicated(keep=False)
+            current_chart_data.loc[duplicate_labels, "axis_issue"] += (
+                " · #" + current_chart_data.loc[duplicate_labels, "backlog_id"].astype(str)
+            )
+            current_chart_data["score_label"] = current_chart_data["current_score"].map(
+                lambda value: f"{value:.2f}"
+            )
+            current_chart = px.bar(
+                current_chart_data,
+                x="current_score",
+                y="axis_issue",
+                orientation="h",
+                color="current_score",
+                color_continuous_scale=["#c7d2fe", "#4f46e5"],
+                text="score_label",
+                custom_data=[
+                    "issue",
+                    "current_score",
+                    "reach",
+                    "impact",
+                    "confidence",
+                    "effort",
+                    "status",
+                ],
+                labels={"current_score": "Latest RICE score", "axis_issue": ""},
+            )
+            current_chart.update_traces(
+                textposition="outside",
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b><br>"
+                    "Latest score: %{customdata[1]:.2f}<br>"
+                    "Reach: %{customdata[2]:.2f}<br>"
+                    "Impact: %{customdata[3]:.2f}<br>"
+                    "Confidence: %{customdata[4]:.0%}<br>"
+                    "Effort: %{customdata[5]:.2f}<br>"
+                    "Status: %{customdata[6]}<extra></extra>"
+                ),
+            )
+            current_score_max = max(float(current_chart_data["current_score"].max()), 1.0)
+            current_chart.update_layout(
+                height=max(300, 62 * len(current_chart_data) + 90),
+                coloraxis_showscale=False,
+                margin=dict(l=10, r=45, t=20, b=10),
+                bargap=0.3,
+            )
+            current_chart.update_xaxes(
+                range=[0, current_score_max * 1.18], gridcolor="#e5e7eb"
+            )
+            current_chart.update_yaxes(
+                categoryorder="array",
+                categoryarray=current_chart_data["axis_issue"].tolist()[::-1],
+                automargin=True,
+            )
+            st.plotly_chart(current_chart, width="stretch")
+
+            current_table = current_priorities[
+                [
+                    "issue",
+                    "current_score",
+                    "reach",
+                    "impact",
+                    "confidence",
+                    "effort",
+                    "status",
+                ]
+            ].copy()
+            for column in ["current_score", "reach", "impact", "effort"]:
+                current_table[column] = current_table[column].map(
+                    lambda value: f"{value:.2f}"
+                )
+            current_table["confidence"] = current_table["confidence"].map(
+                lambda value: f"{value:.0%}"
+            )
+            current_table.columns = [
+                "Issue",
+                "Current score",
+                "Reach",
+                "Impact",
+                "Confidence",
+                "Effort",
+                "Status",
+            ]
+            st.dataframe(current_table, width="stretch", hide_index=True)
+            st.caption(
+                "Latest score changes appear once at least two reviewed items have an earlier "
+                "score snapshot."
             )
 
 with ingest_tab:

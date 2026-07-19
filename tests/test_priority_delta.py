@@ -1,6 +1,51 @@
 import pandas as pd
 
-from src.priority_delta import build_priority_delta_frame
+from src.priority_delta import (
+    build_current_priority_frame,
+    build_priority_delta_frame,
+    priority_insight_mode,
+)
+
+
+def test_priority_insight_mode_requires_two_comparable_items() -> None:
+    assert priority_insight_mode(pd.DataFrame([{"delta": 1.0}])) == "current"
+    assert (
+        priority_insight_mode(pd.DataFrame([{"delta": 1.0}, {"delta": -1.0}]))
+        == "delta"
+    )
+
+
+def test_current_priorities_returns_top_five_with_explainable_inputs() -> None:
+    backlog = pd.DataFrame(
+        [
+            {
+                "id": item_id,
+                "issue": f"Issue {item_id}",
+                "rice_score": float(item_id),
+                "reach": float(item_id + 1),
+                "impact": 2.0,
+                "confidence": 0.8,
+                "effort": 1.0,
+                "status": "Reviewed" if item_id % 2 else "Ready for review",
+            }
+            for item_id in range(1, 7)
+        ]
+    )
+
+    result = build_current_priority_frame(backlog)
+
+    assert result["backlog_id"].tolist() == [6, 5, 4, 3, 2]
+    assert result["current_score"].tolist() == [6.0, 5.0, 4.0, 3.0, 2.0]
+    assert result.columns.tolist() == [
+        "backlog_id",
+        "issue",
+        "current_score",
+        "reach",
+        "impact",
+        "confidence",
+        "effort",
+        "status",
+    ]
 
 
 def test_priority_delta_uses_latest_two_snapshots_and_sorts_by_movement() -> None:

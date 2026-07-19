@@ -71,7 +71,7 @@ CURRENT_ARCHITECTURE = (
         (
             ArchitectureNode(
                 "Streamlit workspace",
-                "Dashboard, review, deltas, manual re-rank",
+                "Dashboard, review, adaptive insights, manual re-rank",
                 "built",
             ),
             ArchitectureNode(
