@@ -19,6 +19,9 @@ def test_streamlit_app_renders_without_exception() -> None:
         "Quality & guardrails",
         "System architecture",
     ]
+    subheadings = [item.value for item in app.subheader]
+    assert "What changed in prioritization" in subheadings
+    assert "Priority movement for the current top 5" not in subheadings
     architecture_control = next(
         control for control in app.radio if control.label == "Architecture view"
     )

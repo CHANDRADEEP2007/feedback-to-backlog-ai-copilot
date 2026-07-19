@@ -47,12 +47,12 @@ Every score is explainable, evaluation results are measured, and known limitatio
 | **Human review** | Product managers can adjust RICE inputs before Jira sync |
 | **Explainable re-rank** | Dragging priority changes Confidence by a fixed 5 percentage points per position, logs the reviewer and formula change, and supports one-click reset |
 | **Jira Cloud sync** | Creates new issues or updates already-linked issues through the REST API |
-| **Interactive dashboard** | Priority, category, search, source, trend, and guardrail views in Streamlit |
+| **Interactive dashboard** | Priority, category, search, source, score-change, and guardrail views in Streamlit |
 | **Dedicated architecture view** | A fifth dashboard tab switches between the built MVP flow and a clearly labeled target-state roadmap |
 | **Connections preview** | A minor sidebar panel lists planned sources as disabled “Coming soon” controls; no connector is presented as functional before it exists |
 | **Guardrails** | Malformed AI output is retried once, then logged and skipped safely |
 | **Measured quality** | A labeled 40-ticket evaluation harness reports actual extraction and dedup metrics |
-| **Priority trends** | Score history shows how rankings change as feedback accumulates |
+| **Priority change deltas** | A signed bar chart and audit table compare each reviewed item's latest RICE score with its previous snapshot |
 | **Bulk Jira sync** | Syncs reviewed items independently so one failure does not stop the batch |
 | **Explainable merges** | Each duplicate source stores its matching method and similarity score |
 

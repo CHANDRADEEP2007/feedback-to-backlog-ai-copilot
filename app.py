@@ -13,6 +13,7 @@ from src.database import BacklogDatabase
 from src.evaluation import load_results, run_evaluation, save_results
 from src.jira_client import JiraClient, sync_reviewed_items
 from src.pipeline import process_batch
+from src.priority_delta import build_priority_delta_frame
 from src.scoring import RiceScore, confidence_after_move
 
 
@@ -183,25 +184,107 @@ with overview_tab:
         display.columns = ["Issue", "Category", "RICE", "Signals", "Priority source", "Status", "Jira"]
         st.dataframe(display.head(20), width="stretch", hide_index=True)
 
+        st.subheader("What changed in prioritization")
+        st.caption(
+            "Compares each reviewed item's latest RICE score against its previous score snapshot."
+        )
         history = frame(db.score_history_rows())
-        if not history.empty:
-            top_ids = backlog.nlargest(5, "rice_score")["id"].tolist()
-            trend = history[history["backlog_id"].isin(top_ids)].copy()
-            trend["recorded_at"] = pd.to_datetime(trend["recorded_at"], utc=True)
-            trend["event"] = trend.groupby("backlog_id").cumcount() + 1
-            trend_chart = px.line(
-                trend,
-                x="event",
-                y="rice_score",
-                color="issue",
-                markers=True,
-                title="Priority movement for the current top 5",
-                labels={"event": "Score event", "rice_score": "RICE score", "issue": "Issue"},
-                hover_data={"reason": True, "recorded_at": True, "event": True},
+        priority_delta = build_priority_delta_frame(backlog, history)
+        if priority_delta.empty:
+            st.info(
+                "No score changes yet. This chart appears after duplicate merges or manual "
+                "review create a second score snapshot."
             )
-            trend_chart.update_layout(height=430, margin=dict(l=10, r=10, t=55, b=10))
-            st.plotly_chart(trend_chart, width="stretch")
-            st.caption("Each point is a creation, duplicate merge, migration snapshot, or manual review.")
+        else:
+            delta_chart_data = priority_delta.copy()
+            delta_chart_data["axis_issue"] = delta_chart_data["issue"].map(
+                lambda issue: issue if len(issue) <= 58 else f"{issue[:57]}…"
+            )
+            duplicate_labels = delta_chart_data["axis_issue"].duplicated(keep=False)
+            delta_chart_data.loc[duplicate_labels, "axis_issue"] += (
+                " · #" + delta_chart_data.loc[duplicate_labels, "backlog_id"].astype(str)
+            )
+            delta_chart_data["delta_label"] = delta_chart_data["delta"].map(
+                lambda value: f"{value:+.2f}"
+            )
+            delta_chart = px.bar(
+                delta_chart_data,
+                x="delta",
+                y="axis_issue",
+                orientation="h",
+                color="direction",
+                color_discrete_map={"up": "#16a34a", "flat": "#9ca3af", "down": "#dc2626"},
+                text="delta_label",
+                custom_data=[
+                    "issue",
+                    "previous_score",
+                    "current_score",
+                    "delta_label",
+                    "reason",
+                ],
+                labels={"delta": "RICE score change", "axis_issue": ""},
+            )
+            delta_chart.update_traces(
+                textposition="outside",
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b><br>"
+                    "Previous score: %{customdata[1]:.2f}<br>"
+                    "Current score: %{customdata[2]:.2f}<br>"
+                    "Change: %{customdata[3]}<br>"
+                    "Reason: %{customdata[4]}<extra></extra>"
+                ),
+            )
+            flat_changes = delta_chart_data[delta_chart_data["direction"] == "flat"]
+            if not flat_changes.empty:
+                delta_chart.add_scatter(
+                    x=[0.0] * len(flat_changes),
+                    y=flat_changes["axis_issue"],
+                    mode="markers",
+                    marker={"color": "#9ca3af", "size": 10, "symbol": "diamond"},
+                    customdata=flat_changes[
+                        ["issue", "previous_score", "current_score", "delta_label", "reason"]
+                    ],
+                    hovertemplate=(
+                        "<b>%{customdata[0]}</b><br>"
+                        "Previous score: %{customdata[1]:.2f}<br>"
+                        "Current score: %{customdata[2]:.2f}<br>"
+                        "Change: %{customdata[3]}<br>"
+                        "Reason: %{customdata[4]}<extra></extra>"
+                    ),
+                    showlegend=False,
+                )
+            delta_chart.update_layout(
+                height=max(260, 70 * len(delta_chart_data) + 90),
+                showlegend=False,
+                margin=dict(l=10, r=45, t=20, b=10),
+                bargap=0.35,
+            )
+            delta_span = max(float(delta_chart_data["delta"].abs().max()), 0.5)
+            delta_chart.update_xaxes(
+                range=[-delta_span * 1.25, delta_span * 1.25],
+                zeroline=True,
+                zerolinecolor="#64748b",
+                gridcolor="#e5e7eb",
+            )
+            delta_chart.update_yaxes(
+                categoryorder="array",
+                categoryarray=delta_chart_data["axis_issue"].tolist()[::-1],
+                automargin=True,
+            )
+            st.plotly_chart(delta_chart, width="stretch")
+            st.caption("Green increases · gray unchanged · red decreases")
+
+            delta_table = priority_delta[
+                ["issue", "previous_score", "current_score", "delta", "reason"]
+            ].copy()
+            delta_table["previous_score"] = delta_table["previous_score"].map(lambda value: f"{value:.2f}")
+            delta_table["current_score"] = delta_table["current_score"].map(lambda value: f"{value:.2f}")
+            delta_table["delta"] = delta_table["delta"].map(lambda value: f"{value:+.2f}")
+            delta_table.columns = ["Issue", "Previous score", "Current score", "Delta", "Reason"]
+            st.dataframe(delta_table, width="stretch", hide_index=True)
+            st.caption(
+                "Latest score changes are shown only for items with at least one earlier score snapshot."
+            )
 
 with ingest_tab:
     st.subheader("Process a feedback batch")
