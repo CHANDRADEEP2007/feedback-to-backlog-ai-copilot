@@ -12,6 +12,13 @@ def test_streamlit_app_renders_without_exception() -> None:
     app.run()
 
     assert not app.exception
+    assert [tab.label for tab in app.tabs] == [
+        "Overview",
+        "Process feedback",
+        "Backlog review",
+        "Quality & guardrails",
+        "System architecture",
+    ]
     architecture_control = next(
         control for control in app.radio if control.label == "Architecture view"
     )

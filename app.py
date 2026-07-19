@@ -112,8 +112,14 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-overview_tab, ingest_tab, backlog_tab, quality_tab = st.tabs(
-    ["Overview", "Process feedback", "Backlog review", "Quality & guardrails"]
+overview_tab, ingest_tab, backlog_tab, quality_tab, architecture_tab = st.tabs(
+    [
+        "Overview",
+        "Process feedback",
+        "Backlog review",
+        "Quality & guardrails",
+        "System architecture",
+    ]
 )
 
 with overview_tab:
@@ -131,15 +137,10 @@ with overview_tab:
     columns[3].metric("Merge rate", f"{duplicate_rate:.1%}")
     columns[4].metric("Guardrail errors", f"{len(errors):,}")
 
-    st.subheader("System architecture")
-    architecture_view = st.radio(
-        "Architecture view",
-        ARCHITECTURE_VIEWS,
-        index=0,
-        horizontal=True,
-        label_visibility="collapsed",
+    st.caption(
+        "**System architecture** · See the dedicated tab for current-state and "
+        "target-state architecture."
     )
-    st.markdown(render_architecture(architecture_view), unsafe_allow_html=True)
 
     if backlog.empty:
         st.info("No backlog yet. Open **Process feedback** and run a batch to create the first prioritized items.")
@@ -546,3 +547,17 @@ with quality_tab:
         st.dataframe(errors[["subject", "error", "created_at"]], width="stretch", hide_index=True)
     else:
         st.success("No processing errors logged.")
+
+with architecture_tab:
+    st.subheader("System architecture")
+    st.caption(
+        "See how the current MVP works today and how the target system expands it over time."
+    )
+    architecture_view = st.radio(
+        "Architecture view",
+        ARCHITECTURE_VIEWS,
+        index=0,
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+    st.markdown(render_architecture(architecture_view), unsafe_allow_html=True)
