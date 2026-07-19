@@ -23,6 +23,7 @@ st.markdown(
     .stApp {background: #f6f7fb; color: #182230;}
     [data-testid="stSidebar"] {background: #111827;}
     [data-testid="stSidebar"] * {color: #f9fafb;}
+    [data-testid="stSidebar"] [data-testid="stPopoverButton"] p {color: #111827 !important;}
     [data-testid="stMetric"] {background: white; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px;}
     [data-testid="stSidebar"] [data-testid="stMetric"] {background:#1f2937;border-color:#374151;}
     [data-testid="stSidebar"] [data-testid="stMetric"] * {color:#f9fafb !important;}
